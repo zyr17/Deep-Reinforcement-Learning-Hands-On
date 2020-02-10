@@ -13,6 +13,12 @@ import torch.optim as optim
 
 from tensorboardX import SummaryWriter
 
+import pdb
+import matplotlib.pyplot as plt
+import gym
+import cv2
+import pickle
+
 
 DEFAULT_ENV_NAME = "PongNoFrameskip-v4"
 MEAN_REWARD_BOUND = 19.5
@@ -54,6 +60,7 @@ class Agent:
         self.env = env
         self.exp_buffer = exp_buffer
         self._reset()
+        self.count = 0
 
     def _reset(self):
         self.state = env.reset()
@@ -73,6 +80,14 @@ class Agent:
 
         # do step in the environment
         new_state, reward, is_done, _ = self.env.step(action)
+        '''
+        self.count += 1
+        pickle.dump(new_state, open('input/%06d.pt' % self.count, 'wb'))
+        if self.count == 1000: exit()
+        '''
+
+        #pdb.set_trace()
+
         self.total_reward += reward
 
         exp = Experience(self.state, action, reward, is_done, new_state)
@@ -91,16 +106,17 @@ def calc_loss(batch, net, tgt_net, device="cpu"):
     next_states_v = torch.tensor(next_states).to(device)
     actions_v = torch.tensor(actions).to(device)
     rewards_v = torch.tensor(rewards).to(device)
-    done_mask = torch.ByteTensor(dones).to(device)
+    done_mask = torch.ByteTensor(dones).bool().to(device)
 
     state_action_values = net(states_v).gather(1, actions_v.unsqueeze(-1)).squeeze(-1)
     next_state_values = tgt_net(next_states_v).max(1)[0]
     next_state_values[done_mask] = 0.0
     next_state_values = next_state_values.detach()
 
+    #pdb.set_trace()
+
     expected_state_action_values = next_state_values * GAMMA + rewards_v
     return nn.MSELoss()(state_action_values, expected_state_action_values)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -113,7 +129,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if args.cuda else "cpu")
 
     env = wrappers.make_env(args.env)
-
+    
     net = dqn_model.DQN(env.observation_space.shape, env.action_space.n).to(device)
     tgt_net = dqn_model.DQN(env.observation_space.shape, env.action_space.n).to(device)
     writer = SummaryWriter(comment="-" + args.env)

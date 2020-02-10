@@ -3,7 +3,6 @@ import torch.nn as nn
 
 import numpy as np
 
-
 class DQN(nn.Module):
     def __init__(self, input_shape, n_actions):
         super(DQN, self).__init__()
@@ -29,5 +28,6 @@ class DQN(nn.Module):
         return int(np.prod(o.size()))
 
     def forward(self, x):
+        #print(x.shape)
         conv_out = self.conv(x).view(x.size()[0], -1)
         return self.fc(conv_out)
