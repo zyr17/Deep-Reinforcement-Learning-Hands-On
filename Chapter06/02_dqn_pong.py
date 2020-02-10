@@ -6,6 +6,7 @@ import argparse
 import time
 import numpy as np
 import collections
+import random
 
 import torch
 import torch.nn as nn
@@ -77,6 +78,8 @@ class Agent:
             q_vals_v = net(state_v)
             _, act_v = torch.max(q_vals_v, dim=1)
             action = int(act_v.item())
+            if random.random() < 0.01:
+                print(q_vals_v)
 
         # do step in the environment
         new_state, reward, is_done, _ = self.env.step(action)
@@ -157,8 +160,8 @@ if __name__ == "__main__":
             ts_frame = frame_idx
             ts = time.time()
             mean_reward = np.mean(total_rewards[-100:])
-            print("%d: done %d games, mean reward %.3f, eps %.2f, speed %.2f f/s" % (
-                frame_idx, len(total_rewards), mean_reward, epsilon,
+            print("%d: done %d games, mean reward %.3f, last reward %.1f, eps %.2f, speed %.2f f/s" % (
+                frame_idx, len(total_rewards), mean_reward, reward, epsilon,
                 speed
             ))
             writer.add_scalar("epsilon", epsilon, frame_idx)
